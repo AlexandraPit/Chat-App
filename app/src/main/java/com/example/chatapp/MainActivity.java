@@ -40,53 +40,52 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
         String userName = getIntent().getStringExtra("user");
+        if (userName == null) {
+            userName = FirebaseAuth.getInstance().getCurrentUser() != null
+                    ? FirebaseAuth.getInstance().getCurrentUser().getDisplayName()
+                    : "User";
+        }
         getSupportActionBar().setTitle(userName);
 
-        userAdapter=new UserAdapter(this);
-        recyclerView=findViewById(R.id.recycler);
-
-        recyclerView.setAdapter(userAdapter);
+        recyclerView = findViewById(R.id.recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        userAdapter = new UserAdapter(this);
+        recyclerView.setAdapter(userAdapter);
 
-        databaseReference= FirebaseDatabase.getInstance().getReference("users");
+        databaseReference = FirebaseDatabase.getInstance().getReference("users");
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 userAdapter.clear();
-                for(DataSnapshot dataSnapshot: snapshot.getChildren())
-                {
-                    String uId = dataSnapshot.getKey();
+                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
                     UserModel userModel = dataSnapshot.getValue(UserModel.class);
-                    if(userModel!=null && userModel.getUserId()!=null && !userModel.getUserId().equals(FirebaseAuth.getInstance().getUid()))
-                    {
+                    if (userModel != null && userModel.getUserId() != null
+                            && !userModel.getUserId().equals(FirebaseAuth.getInstance().getUid())) {
                         userAdapter.add(userModel);
                     }
                 }
-                List<UserModel> userModelList = userAdapter.getUserModelList();
                 userAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-
+                // Handle the error appropriately
             }
         });
 
-
-
-
-        setContentView(R.layout.activity_main);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
